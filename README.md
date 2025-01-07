@@ -1,3 +1,3 @@
 # Good Project
  
- **Скачать только dist/main.py**
+ **Скачать только dist/main.exe**
