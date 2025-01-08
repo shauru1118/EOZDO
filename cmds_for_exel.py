@@ -1,6 +1,6 @@
 import openpyxl as pxl
 import os
-
+import EosdoRequest
 
 b_ = ["Сотрудник", "Период", "Выполнено задач", "Просрочено задач", "", "", "", "", "", "", "",]
 columns = {
@@ -74,6 +74,8 @@ class ExelWB:
         for i in range(len(self.employes)):
             self.ws[f"A{i+4}"] = self.employes[i]
 
+        self.eosdo = EosdoRequest.EOSDO()
+        
     def get_data(self):
         # Заполняем данными
         
