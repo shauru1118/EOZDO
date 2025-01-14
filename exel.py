@@ -91,7 +91,7 @@ class ExelWB:
             res_sheet.cell(row=res_sheet.max_row + 1, column=1).value = employee
             res_sheet.cell(row=res_sheet.max_row, column=2).value = sorted_all_pros[employee]
             for date, count in dates.items():
-                res_sheet.cell(row=res_sheet.max_row, column=3).value = date
+                res_sheet.cell(row=res_sheet.max_row+1, column=3).value = date
                 res_sheet.cell(row=res_sheet.max_row, column=4).value = count
 
         for col in res_sheet.columns:
