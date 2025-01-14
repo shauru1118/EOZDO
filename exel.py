@@ -3,16 +3,18 @@ from openpyxl.styles import Alignment
 
 import xlrd
 class ExelWB:
-    def __init__(self, name=None, res_file_name=None):
-        self.wb = xlrd.open_workbook(name)
+    def __init__(self, name=None, res_file_name=None, temp_table_name: dict = None):
+        if name != None:
+            self.wb = xlrd.open_workbook(name)
+            
         print(f"xlrd: Workbook opened: '{name}'")
 
         self.author = "Игорь"
         self.filename = name
         self.res_file_name = res_file_name
         self.res_premia_wb = xl.load_workbook(self.res_file_name)
-        self.emploes = []
-        
+        self.svod_table = temp_table_name
+        self.emploes = {}     
     
     def do_prosrochki(self):
 
@@ -23,6 +25,7 @@ class ExelWB:
 
         employees = [sheet.cell_value(row, 11) for row in range(2, sheet.nrows-1)] # col11
         dates = [int(sheet.cell_value(row, 8).split(".")[1]) for row in range(2, sheet.nrows-1)] # col8
+        status = [sheet.cell_value(row, 4).split(", ") for row in range(2, sheet.nrows-1)]
 
         for i in range(len(employees)):
             cell = employees[i]
@@ -35,15 +38,33 @@ class ExelWB:
                     arr = name.split("/")
                     print("\tname:", arr[0].strip(), "\n\t\tstatus:", arr[1].strip())
                     employee = arr[0].strip()
+                    if ("но не принят" in status[i]) and ("Отчет отклонен на доработку" in arr):
+                        if employee not in self.svod_table.keys():
+                            self.svod_table[employee] = {"y": 1}
+                        else:
+                            if "y" not in self.svod_table[employee].keys():
+                                self.svod_table[employee]["y"] = 1
+
+                            else:
+                                self.svod_table[employee]["y"] += 1
+
                 except:
                     print("\tname:", name, "\n\t\tstatus: NONE")
-                    employee = arr[0].strip()
+                    employee = name.strip()
 
                 if employee not in all_pros.keys():
                     all_pros[employee] = 1
                 else:
                     all_pros[employee] += 1
 
+                if employee not in self.svod_table.keys():
+                    self.svod_table[employee] = {"r": 1}
+                else:
+                    if "r" not in self.svod_table[employee].keys():
+                        self.svod_table[employee]["r"] = 1
+                    else:
+                        self.svod_table[employee]["r"] += 1
+                
                 if employee not in month_pros.keys():
                     month_pros[employee] = {dates[i]: 1}
                 else:
@@ -81,11 +102,12 @@ class ExelWB:
 
         
         res_sheet = self.res_premia_wb.active
-        res_sheet.title = "Прострочки"
-        res_sheet.cell(row=1, column=1).value = "Сотрудник"
-        res_sheet.cell(row=1, column=2).value = "Всего просрочек"
-        res_sheet.cell(row=1, column=3).value = "Месяц"
-        res_sheet.cell(row=1, column=4).value = "Количество прострочек за месяц"
+        res_sheet.title = "Премия"
+        res_sheet.cell(row=1, column=1).value = "Просрочки"
+        res_sheet.cell(row=3, column=1).value = "Сотрудник"
+        res_sheet.cell(row=3, column=2).value = "Всего просрочек"
+        res_sheet.cell(row=3, column=3).value = "Месяц"
+        res_sheet.cell(row=3, column=4).value = "Количество прострочек за месяц"
 
         for employee, dates in sorted_month_pros.items():
             res_sheet.cell(row=res_sheet.max_row + 1, column=1).value = employee
@@ -108,6 +130,8 @@ class ExelWB:
 
                 
         self.res_premia_wb.save(self.res_file_name)
+
+        return self.svod_table
 
     
     def do_vipolneno(self):
@@ -135,7 +159,15 @@ class ExelWB:
                 if employee not in all_vipo.keys():
                     all_vipo[employee] = 1
                 else:
-                    all_vipo[employee] += 1  
+                    all_vipo[employee] += 1
+                
+                if employee not in self.svod_table.keys():
+                    self.svod_table[employee] = {"g": 1}
+                else:
+                    if "g" not in self.svod_table[employee].keys():
+                        self.svod_table[employee]["g"] = 1
+                    else:
+                        self.svod_table[employee]["g"] += 1
 
             print()
 
@@ -149,9 +181,10 @@ class ExelWB:
         # append to excel
 
 
-        res_sheet = self.res_premia_wb.create_sheet("Выполнено")
-        res_sheet.cell(row=1, column=1).value = "Сотрудник"
-        res_sheet.cell(row=1, column=2).value = "Всего выполенных"
+        res_sheet = self.res_premia_wb.active
+        res_sheet.cell(row=res_sheet.max_row+2, column=1).value = "Выполенные"
+        res_sheet.cell(row=res_sheet.max_row+2, column=1).value = "Сотрудник"
+        res_sheet.cell(row=res_sheet.max_row, column=2).value = "Всего выполенных"
 
         for employee, count in sorted_all_vipo.items():
             res_sheet.cell(row=res_sheet.max_row + 1, column=1).value = employee
@@ -169,6 +202,62 @@ class ExelWB:
         for row in range(1, res_sheet.max_row + 1):
             res_sheet.row_dimensions[row].height = 20
 
+
+        self.res_premia_wb.save(self.res_file_name)
+
+        return self.svod_table
+
+    def do_svod(self):
+
+        print("\n\n\nСводная таблица:", self.svod_table)
+        
+
+        res_sheet = self.res_premia_wb.active
+        
+        res_sheet.cell(row=res_sheet.max_row+2, column=1).value = "Сводная таблица"
+    
+        res_sheet.cell(row=res_sheet.max_row+2, column=2).value = "Поручения"
+        res_sheet.cell(row=res_sheet.max_row+1, column=1).value = "Сотрудник"
+        res_sheet.cell(row=res_sheet.max_row, column=2).value = "Просрочено, отчет отклонен"
+        res_sheet.cell(row=res_sheet.max_row, column=3).value = "Проверка"
+        res_sheet.cell(row=res_sheet.max_row, column=4).value = "Выполнено"
+        res_sheet.cell(row=res_sheet.max_row, column=5).value = "Итог по сотруднику"
+
+        for employee, done in self.svod_table.items():
+            res_sheet.cell(row=res_sheet.max_row + 1, column=1).value = employee
+            res_sheet.cell(row=res_sheet.max_row, column=2).value = done.get("r", 0)
+            res_sheet.cell(row=res_sheet.max_row, column=3).value = done.get("y", 0)
+            res_sheet.cell(row=res_sheet.max_row, column=4).value = done.get("g", 0)
+            res_sheet.cell(row=res_sheet.max_row, column=5).value = done.get("r", 0) + done.get("y", 0) + done.get("g", 0)
+
+        res_sheet.cell(row=res_sheet.max_row+1, column=1).value = "Итого"
+        r = []
+        y = []
+        g = []
+        for val in self.svod_table.values():
+            try:
+                r.append(val.get("r", 0))
+                y.append(val.get("y", 0))
+                g.append(val.get("g", 0))
+            except:
+                pass
+
+        res_sheet.cell(row=res_sheet.max_row, column=2).value = sum(r)
+        res_sheet.cell(row=res_sheet.max_row, column=3).value = sum(y)
+        res_sheet.cell(row=res_sheet.max_row, column=4).value = sum(g)
+        res_sheet.cell(row=res_sheet.max_row, column=5).value = sum(r) + sum(y) + sum(g)
+
+        for col in res_sheet.columns:
+            max_length = 0
+            col_letter = col[0].column_letter
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+                cell.alignment = Alignment(wrap_text=True)  # Учитываем перенос строк
+            res_sheet.column_dimensions[col_letter].width = max_length + 2
+
+        for row in range(1, res_sheet.max_row + 1):
+            res_sheet.row_dimensions[row].height = 20
 
         self.res_premia_wb.save(self.res_file_name)
         

@@ -26,15 +26,20 @@ import exel
 
 exel.ExelWB.create_res_premia(RESULT_FILE_NAME)
 
-prosrochki = exel.ExelWB(PROSROCHKI_FILE_NAME, RESULT_FILE_NAME)
-prosrochki.do_prosrochki()
+prosrochki = exel.ExelWB(PROSROCHKI_FILE_NAME, RESULT_FILE_NAME, {})
+temp_svod_table = prosrochki.do_prosrochki()
 prosrochki.end()
 
 
 
-vipolneno = exel.ExelWB(VIPOLNENO_FILE_NAME, RESULT_FILE_NAME)
-vipolneno.do_vipolneno()
+vipolneno = exel.ExelWB(VIPOLNENO_FILE_NAME, RESULT_FILE_NAME, temp_svod_table)
+temp_svod_table = vipolneno.do_vipolneno()
 vipolneno.end()
+
+svod_table = exel.ExelWB(None, RESULT_FILE_NAME, temp_svod_table)
+svod_table.do_svod()
+
+svod_table.end()
 
 import tqdm
 
