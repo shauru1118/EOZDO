@@ -1,7 +1,28 @@
 import openpyxl as xl
-from openpyxl.styles import Alignment
+from openpyxl.styles import Alignment, PatternFill, Font, Border, Side
+
+from copy import copy
 
 import xlrd
+
+yellow_fill = PatternFill(start_color="FFFFCC", end_color="FFFFCC", fill_type="solid")
+red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+green_fill = PatternFill(start_color="CCFF99", end_color="CCFF99", fill_type="solid")
+emploe_fill = PatternFill(start_color="FFCC99", end_color="FFCC99", fill_type="solid")
+itog_fill = PatternFill(start_color="99FFFF", end_color="99FFFF", fill_type="solid")
+red_font = Font(color="FF0000")
+yellow_font = Font(color="666600")
+green_font = Font(color="006600")
+
+border_style = Border(
+    left=Side(border_style="thin", color="000000"),  # Линия слева
+    right=Side(border_style="thin", color="000000"),  # Линия справа
+    top=Side(border_style="thin", color="000000"),  # Линия сверху
+    bottom=Side(border_style="thin", color="000000")  # Линия снизу
+)
+
+
+
 class ExelWB:
     def __init__(self, name=None, res_file_name=None, temp_table_name: dict = None):
         if name != None:
@@ -14,7 +35,7 @@ class ExelWB:
         self.res_file_name = res_file_name
         self.res_premia_wb = xl.load_workbook(self.res_file_name)
         self.svod_table = temp_table_name
-        self.emploes = {}     
+        self.emploes = {}
     
     def do_prosrochki(self):
 
@@ -102,7 +123,7 @@ class ExelWB:
 
         
         res_sheet = self.res_premia_wb.active
-        res_sheet.title = "Премия"
+        res_sheet.title = "Просрочки и закрыто"
         res_sheet.cell(row=1, column=1).value = "Просрочки"
         res_sheet.cell(row=3, column=1).value = "Сотрудник"
         res_sheet.cell(row=3, column=2).value = "Всего просрочек"
@@ -212,25 +233,60 @@ class ExelWB:
         print("\n\n\nСводная таблица:", self.svod_table)
         
 
-        res_sheet = self.res_premia_wb.active
+        res_sheet = self.res_premia_wb.create_sheet("Таблица")
+
+        sheet_to_move = self.res_premia_wb["Таблица"]
+        self.res_premia_wb._sheets.remove(sheet_to_move)  # Удаляем из списка
+        self.res_premia_wb._sheets.insert(0, sheet_to_move)  # Вставляем на нужное место
+
         
-        res_sheet.cell(row=res_sheet.max_row+2, column=1).value = "Сводная таблица"
+        res_sheet.cell(row=1, column=1).value = "Сводная таблица"
+        res_sheet.cell(row=1, column=1).font = Font(color="FFFFFF")
+        res_sheet.cell(row=1, column=1).fill = PatternFill(start_color="000000", end_color="000000", fill_type="solid")
+        res_sheet.merge_cells("A1:E1")
     
-        res_sheet.cell(row=res_sheet.max_row+2, column=2).value = "Поручения"
-        res_sheet.cell(row=res_sheet.max_row+1, column=1).value = "Сотрудник"
-        res_sheet.cell(row=res_sheet.max_row, column=2).value = "Просрочено, отчет отклонен"
-        res_sheet.cell(row=res_sheet.max_row, column=3).value = "Проверка"
-        res_sheet.cell(row=res_sheet.max_row, column=4).value = "Выполнено"
-        res_sheet.cell(row=res_sheet.max_row, column=5).value = "Итог по сотруднику"
+        res_sheet.cell(row=3, column=2).value = "Поручения"
+        res_sheet.cell(row=3, column=2).fill = itog_fill
+        res_sheet.merge_cells("B3:D3")
+        # res_sheet["B3"].alignment = Alignment(horizontal="center", vertical="center")
+        res_sheet.cell(row=4, column=1).value = "Сотрудник"
+        res_sheet.cell(row=4, column=1).fill = emploe_fill
+        res_sheet.cell(row=4, column=2).value = "Просрочено, отчет отклонен"
+        res_sheet.cell(row=4, column=2).fill = red_fill
+        res_sheet.cell(row=4, column=3).value = "Проверка"
+        res_sheet.cell(row=4, column=3).fill = yellow_fill
+        res_sheet.cell(row=4, column=4).value = "Выполнено"
+        res_sheet.cell(row=4, column=4).fill = green_fill
+        res_sheet.cell(row=4, column=5).value = "Итог по сотруднику"
+        res_sheet.cell(row=4, column=5).fill = itog_fill
 
         for employee, done in self.svod_table.items():
-            res_sheet.cell(row=res_sheet.max_row + 1, column=1).value = employee
-            res_sheet.cell(row=res_sheet.max_row, column=2).value = done.get("r", 0)
-            res_sheet.cell(row=res_sheet.max_row, column=3).value = done.get("y", 0)
-            res_sheet.cell(row=res_sheet.max_row, column=4).value = done.get("g", 0)
-            res_sheet.cell(row=res_sheet.max_row, column=5).value = done.get("r", 0) + done.get("y", 0) + done.get("g", 0)
+            e = res_sheet.cell(row=res_sheet.max_row + 1, column=1)
+            e.value = employee
+            e.fill = emploe_fill
+            r = res_sheet.cell(row=res_sheet.max_row, column=2)
+            r.value = done.get("r", 0)
+            r.font = red_font
+            r.fill = red_fill
+            
+            y = res_sheet.cell(row=res_sheet.max_row, column=3)
+            if done.get("y", 0) != 0:
+                y.value = done.get("y", 0)
+            y.font = yellow_font
+            y.fill = yellow_fill
+            
+            g = res_sheet.cell(row=res_sheet.max_row, column=4)
+            g.value = done.get("g", 0)
+            g.font = green_font
+            g.fill = green_fill
+            
+            itog_res = res_sheet.cell(row=res_sheet.max_row, column=5)
+            itog_res.value = done.get("r", 0) + done.get("y", 0) + done.get("g", 0)
+            itog_res.fill = itog_fill
 
-        res_sheet.cell(row=res_sheet.max_row+1, column=1).value = "Итого"
+        temp = res_sheet.cell(row=res_sheet.max_row+1, column=1)
+        temp.value = "Итого"
+        temp.fill = itog_fill
         r = []
         y = []
         g = []
@@ -242,22 +298,40 @@ class ExelWB:
             except:
                 pass
 
-        res_sheet.cell(row=res_sheet.max_row, column=2).value = sum(r)
-        res_sheet.cell(row=res_sheet.max_row, column=3).value = sum(y)
-        res_sheet.cell(row=res_sheet.max_row, column=4).value = sum(g)
-        res_sheet.cell(row=res_sheet.max_row, column=5).value = sum(r) + sum(y) + sum(g)
+        r_res = res_sheet.cell(row=res_sheet.max_row, column=2)
+        r_res.value = sum(r)
+        temp = copy(red_font); temp.bold = True; r_res.font = temp
+        r_res.fill = itog_fill
+        
+        y_res = res_sheet.cell(row=res_sheet.max_row, column=3)
+        y_res.value = sum(y)
+        temp = copy(yellow_font); temp.bold = True; y_res.font = temp
+        y_res.fill = itog_fill
+        
+        g_res = res_sheet.cell(row=res_sheet.max_row, column=4)
+        g_res.value = sum(g)
+        temp = copy(green_font); temp.bold = True; g_res.font = temp
+        g_res.fill = itog_fill
+        
+        res_res = res_sheet.cell(row=res_sheet.max_row, column=5)
+        res_res.value = sum(r) + sum(y) + sum(g)
+        res_res.font = Font(bold=True, color="FFFFFF")
+        res_res.fill = PatternFill(start_color="0000CC", end_color="0000CC", fill_type="solid")
 
         for col in res_sheet.columns:
             max_length = 0
-            col_letter = col[0].column_letter
+            col_letter = col[-1].column_letter
             for cell in col:
-                if cell.value:
+                if cell.value or cell.value == 0:
                     max_length = max(max_length, len(str(cell.value)))
-                cell.alignment = Alignment(wrap_text=True)  # Учитываем перенос строк
-            res_sheet.column_dimensions[col_letter].width = max_length + 2
+                    cell.border = border_style
+                elif cell.row> 2 and cell.column > 2 and not (cell.row == 3 and cell.column == 5):
+                    cell.border = border_style
+                cell.alignment = Alignment(wrap_text=True, horizontal="center", vertical="center")  # Учитываем перенос строк
+            res_sheet.column_dimensions[col_letter].width = max_length + 10
 
         for row in range(1, res_sheet.max_row + 1):
-            res_sheet.row_dimensions[row].height = 20
+            res_sheet.row_dimensions[row].height = 22
 
         self.res_premia_wb.save(self.res_file_name)
         

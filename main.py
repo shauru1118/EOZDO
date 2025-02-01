@@ -46,14 +46,13 @@ import tqdm
 print("\n\n")
 
 for i in tqdm.tqdm(range(300), colour="white"):
-    sleep(0.001)
+    pass
 
 for i in tqdm.tqdm(range(300), colour="blue"):
-    sleep(0.001)
-
+    pass
 
 for i in tqdm.tqdm(range(300), colour="red"):
-    sleep(0.001)
+    pass
 
 sleep(0.8)
 
