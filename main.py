@@ -3,7 +3,6 @@ VIPOLNENO_FILE_NAME = "2.xls"
 RESULT_FILE_NAME = "res_prem.xlsx"
 
 from time import sleep 
-import time
 
 print("ВНИМАНИЕ!\n" + 
       f"Убедитесь, что два файла: {PROSROCHKI_FILE_NAME} (просрочки) и {VIPOLNENO_FILE_NAME} (закрыто) " + 
@@ -27,41 +26,26 @@ import exel
 exel.ExelWB.create_res_premia(RESULT_FILE_NAME)
 
 prosrochki = exel.ExelWB(PROSROCHKI_FILE_NAME, RESULT_FILE_NAME, {})
-temp_svod_table = prosrochki.do_prosrochki()
+pros_svod_table = prosrochki.do_prosrochki()
 prosrochki.end()
 
-
-
-vipolneno = exel.ExelWB(VIPOLNENO_FILE_NAME, RESULT_FILE_NAME, temp_svod_table)
-temp_svod_table = vipolneno.do_vipolneno()
+vipolneno = exel.ExelWB(VIPOLNENO_FILE_NAME, RESULT_FILE_NAME, pros_svod_table)
+vipo_svod_table = vipolneno.do_vipolneno()
 vipolneno.end()
 
-svod_table = exel.ExelWB(None, RESULT_FILE_NAME, temp_svod_table)
+svod_table = exel.ExelWB(None, RESULT_FILE_NAME, vipo_svod_table)
 svod_table.do_svod()
 
 svod_table.end()
 
-import tqdm
+sleep(0.5)
 
-print("\n\n")
-
-for i in tqdm.tqdm(range(300), colour="white"):
-    pass
-
-for i in tqdm.tqdm(range(300), colour="blue"):
-    pass
-
-for i in tqdm.tqdm(range(300), colour="red"):
-    pass
-
-sleep(0.8)
 
 from termcolor import colored
 
 console_width = os.get_terminal_size().columns
 
-print(f"\n\n{"=" * console_width}\n" + colored("<<<< Данные выше предназначены для отладки и контроля, они вам не нужны >>>>",
-                                                                       "green"))
+print(f"\n\n{"=" * console_width}")
 
 print(colored("\n" + "Готово!\n" + f"Результаты сохранены в файле: {RESULT_FILE_NAME}\n" + 
       "Он откроется сам, а вы дочитайте этот текст :).\n" + 
